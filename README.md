@@ -1,152 +1,195 @@
-# AI Mystery Room
+# 🕵️‍♂️ AI Mystery Room
+### *Deductive Investigation Bureau — Procedural AI Murder Mysteries*
 
-An immersive, AI-powered detective puzzle game built with MERN (MongoDB, Express, React, Node) and Google Gemini.
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Groq AI](https://img.shields.io/badge/Groq%20AI-LPU%20Inference-f55036?style=for-the-badge&logo=openai&logoColor=white)](https://groq.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose%208-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Vitest](https://img.shields.io/badge/Tested%20With-Vitest-FCC72B?style=for-the-badge&logo=vitest&logoColor=black)](https://vitest.dev/)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
-Every case is generated from a user premise or scenario, validated through an AI "blind solver" for fair deductive solvability, and solved through clues, WhatsApp-style chats, CCTV logs, forensics, and suspect interrogation.
-
----
-
-## Features
-
-- **Solution-First Generative Pipeline:** Decides the culprit, motive, method, and 24-hour timeline first, then generates clues designed to conclusively point to the truth.
-- **Fair Solvability Verification:** A blind detective model verifies that the evidence is sufficient to deductively catch the culprit with $\ge 60\%$ confidence before the case is playable.
-- **Strict Anti-Spoiler Guarantee:** Server-side allow-list serialization guarantees no culprit identities, motives, or prompt data ever reach the client until the investigation is resolved.
-- **Type-Specific Evidence Viewers:**
-  - **Chat:** Simulated messaging app interface with timestamps, status ticks, and deleted message markers.
-  - **Document:** Styled official records, wills, letters, and receipts with confidential stamps.
-  - **Statement:** Transcripts of witness and suspect statements with reliability notes.
-  - **CCTV Simulation:** Dark surveillance monitor with CRT scanlines, REC indicator, live timestamp, and scrubbable timeline slider.
-  - **Forensics & Logs:** Autopsy, fingerprint, toxicology, and electronic access logs.
-- **Interactive Detective Tools:**
-  - Auto-saving notebook for tracking deductions.
-  - Suspect-linked Evidence Pinboard.
-  - Contextual hints that nudge without spoiling the culprit.
-  - Formal accusation and indictment mechanics with attempt counters.
-  - Comprehensive reveal breakdown and scoring engine.
+An immersive, full-stack procedural mystery game where every case is generated from any premise in seconds using **Groq's ultra-fast LPU inference**, verified by an AI **Blind Detective** for guaranteed solvability, and cracked by the player through interactive crime scene evidence, CCTV surveillance feeds, and a detective scratchpad.
 
 ---
 
-## Tech Stack
+## 🌟 Key Features
 
-- **Frontend:** React 18, Vite, Tailwind CSS, TanStack Query, Zustand, Framer Motion, Lucide Icons.
-- **Backend:** Node.js 20 LTS, Express 4 (ES modules), Mongoose 8.
-- **AI Integration:** Google Gemini API (`@google/genai`).
-- **Testing:** Vitest, Supertest.
-- **Security:** Helmet, CORS, Express Rate Limit, Express Mongo Sanitize, httpOnly cookies.
+### 🧠 Solution-First Generative Pipeline
+- **Internally Consistent Plots:** Rather than improvising on the fly, the generation engine invents the true culprit, motive, opportunity, method, and a strict 24-hour timeline *first*.
+- **Subtle Clue Distribution:** Spreads decisive links, supporting clues, and convincing red herrings across suspects and evidence items.
+- **Lightning-Fast Generation:** Powered by **Groq** (`openai/gpt-oss-120b`), generating deep, multi-layered mysteries in seconds.
+
+### ⚖️ Fair Solvability & Blind Verification
+- **Automated Blind Solver:** Before any case is saved as playable, an independent AI solver analyzes *only* the discovered evidence without knowing the answer beforehand.
+- **Strict Quality Threshold:** If the solver cannot deduce the true culprit with $\ge 60\%$ confidence or discovers an unresolvable contradiction, the system repairs or regenerates the case automatically.
+
+### 🛡️ Zero-Spoiler Guarantee
+- **Server-Side Allowlist Serialization:** Culprit IDs, true solution timelines, and key evidence identifiers are marked with `{ select: false }` in Mongoose and completely stripped before reaching the client.
+- **Zero Client-Side Leaks:** Even by opening Chrome DevTools or inspecting network packets, players cannot cheat until the formal verdict is submitted.
+
+### 🔎 Realistic Multimedia Evidence Viewers
+- **📹 CCTV Surveillance Feed:** Retro CRT scanline monitor, `REC` indicator, live timestamps, and scrubbable timeline slider.
+- **💬 Intercepted Chats:** Messaging dialogue with sender timestamps, delivery ticks, and deleted message markers.
+- **📄 Official Documents:** Styled coroner reports, unsigned wills, letters, and receipts with authenticated case stamps.
+- **🗣️ Witness & Suspect Statements:** Transcripts of official interrogations with claimed alibis.
+- **🔬 Forensics & Access Logs:** Laboratory chemical analysis, brass filings, keycard badge logs, and timestamps.
+
+### 📓 Interactive Detective Tools
+- **Auto-Saving Scratchpad / Notebook:** Record deductions, notes, and timeline inconsistencies in real-time with automatic cloud persistence.
+- **Suspect Lineup & Profiles:** Quick-reference cards detailing ages, occupations, claimed alibis, and initial statements.
+- **Evidence Pinboard:** Visual board linking suspects to physical clues.
+- **Contextual AI Mentor Hints:** Requests guidance without ever spoiling the culprit's name or identity.
+- **Formal Accusation & Scoring Engine:** Submit your final theory and receive a detective rating based on attempts, hints used, and deductive accuracy.
 
 ---
 
-## Getting Started
+## 🎮 Gameplay Flow
+
+```mermaid
+flowchart LR
+    A["💡 Enter Mystery Premise"] --> B["⚙️ Groq AI Generates Blueprint & Evidence"]
+    B --> C["🕵️‍♂️ Blind Solver Verifies Solvability"]
+    C --> D["📁 Case Dossier & Crime Scene"]
+    D --> E["🔍 Examine CCTV, Chats, Forensics"]
+    E --> F["📓 Scratchpad Notes & Clue Linking"]
+    F --> G["⚖️ Accuse Culprit & Score Reveal"]
+```
+
+1. **Case Dossier:** Read the incident briefing, victim summary, setting, and the 4 suspects of interest.
+2. **Investigation:** Open evidence cards on the left panel to examine CCTV sightings, broken alibis, and forensic reports.
+3. **Scratchpad:** Click the **Notebook** tab to write down timeline discrepancies (e.g. cross-referencing military time `22:15` against a suspect's claimed alibi).
+4. **Indictment:** When confident, click **Accuse Culprit**, choose the suspect, type your deduction theory, and discover if you cracked the case!
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 18, Vite 6, Tailwind CSS 3.4, TanStack Query, Zustand, Lucide React Icons |
+| **Backend** | Node.js 20 LTS (ES Modules), Express 4, Mongoose 8, Zod schema validation |
+| **AI Inference** | **Groq SDK** (`openai/gpt-oss-120b`, `llama-3.3-70b-versatile`), JSON Mode, Structured Schemas |
+| **Database** | MongoDB (with automatic fallback to `mongodb-memory-server` for zero-setup local dev) |
+| **Testing** | Vitest 3, Supertest (14 automated milestone tests) |
+| **Security** | Helmet, CORS, Express Rate Limit, Express Mongo Sanitize, httpOnly Cookie sessions |
+
+---
+
+## 🚀 Quickstart & Installation
 
 ### Prerequisites
+- [Node.js](https://nodejs.org/) (v20+ recommended)
+- A free **Groq API Key** from [Groq Console](https://console.groq.com/keys)
 
-- Node.js 20+ installed
-- MongoDB (optional for local dev: automatically falls back to in-memory MongoDB if standalone instance is not running)
-- Gemini API Key from [Google AI Studio](https://aistudio.google.com/)
-
-### Installation
-
+### 1. Clone the Repository
 ```bash
-# Clone the repository
-git clone <repo-url>
-cd AI_mysteryRoom
+git clone https://github.com/Arvindkumar-star/AI_MYSTERY_ROOM.git
+cd AI_MYSTERY_ROOM
+```
 
-# Install all workspace dependencies
+### 2. Install Dependencies
+```bash
+# Installs root, client, and server dependencies in one command
 npm install
 ```
 
-### Environment Configuration
-
-Copy `.env.example` to `server/.env` and `client/.env`:
+### 3. Configure Environment Variables
+Copy the `.env.example` file to create your server `.env`:
 
 ```bash
-# Server configuration (server/.env)
-NODE_ENV=development
+cp server/.env.example server/.env
+cp client/.env.example client/.env
+```
+
+Edit `server/.env` with your preferred settings and API key:
+```env
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/ai-mystery-room
+NODE_ENV=development
 CLIENT_ORIGIN=http://localhost:5173
-COOKIE_SECRET=change-me-to-a-secure-secret-key
+COOKIE_SECRET=detective-mystery-secret-32-chars-key
 
-# Gemini AI API Configuration
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_TEXT_MODEL=gemini-3.5-flash-lite
-GEMINI_REASONING_MODEL=gemini-3.5-flash-lite
-GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
-GEMINI_TIMEOUT_MS=60000
-MAX_IMAGES_PER_CASE=6
+# Groq AI Configuration
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_TEXT_MODEL=openai/gpt-oss-120b
+GROQ_REASONING_MODEL=openai/gpt-oss-120b
+GROQ_TIMEOUT_MS=60000
 
-# Client configuration (client/.env)
-VITE_API_BASE_URL=http://localhost:5000/api
+# MongoDB (Optional: automatically uses in-memory DB if omitted)
+MONGODB_URI=mongodb://localhost:27017/ai-mystery-room
 ```
 
-### Running Locally
-
+### 4. Run the Application
 ```bash
-# Start both server and client concurrently
+# Starts both Backend API (port 5000) and Frontend Vite Server (port 5173)
 npm run dev
-
-# Or run separately:
-npm run dev --workspace=server # Starts API at http://localhost:5000
-npm run dev --workspace=client # Starts Vite dev server at http://localhost:5173
 ```
+
+Open your browser at **`http://localhost:5173`** to begin investigating!
 
 ---
 
-## Running Tests
+## 🧪 Testing
 
-The test suite validates all 8 spec milestones:
+The test suite validates foundation health, anti-spoiler invariants, generation pipelines, gameplay mechanics, and scoring:
 
 ```bash
 # Run all server tests
 npm test
 
-# Run individual milestone test suites:
-npm test -- --run tests/m1.health.test.js      # Milestone 1: Foundation & Session
-npm test -- --run tests/m2.spoiler.test.js     # Milestone 2: Anti-Spoiler Invariants
-npm test -- --run tests/m3.pipeline.test.js    # Milestone 3: AI Generation Pipeline
-npm test -- --run tests/m5_m7.gameplay.test.js # Milestones 5 & 7: Accusation, Scoring, Hints
+# Run tests in watch mode
+npm run test:watch --workspace=server
 ```
 
 ---
 
-## Architecture & Directory Structure
+## 📂 Project Structure
 
 ```
-ai-mystery-room/
-├─ package.json                 # Monorepo workspace configuration
-├─ .env.example
-├─ docs/
-│  ├─ SPEC.md                   # Full product & technical specification
-│  └─ DECISIONS.md              # Architectural decisions (ADRs)
-├─ server/
-│  ├─ src/
-│  │  ├─ index.js               # Bootstrap & graceful recovery
-│  │  ├─ app.js                 # Express application & middleware
-│  │  ├─ config/env.js          # Zod environment validation
-│  │  ├─ db/connect.js          # MongoDB connection + in-memory fallback
-│  │  ├─ models/                # Case, Player, Investigation, Asset
-│  │  ├─ routes/                # cases, investigations, assets, health
-│  │  ├─ services/              # gemini pipeline, sanitizer, scoring, accusation
-│  │  ├─ middleware/            # playerSession, rateLimit, errorHandler
-│  │  └─ utils/                 # logger
-│  └─ tests/                    # Vitest test suites & sampleCase fixtures
-└─ client/
-   ├─ src/
-   │  ├─ api/                   # API client fetch wrapper
-   │  ├─ pages/                 # Landing, Generating, Briefing, Investigation, Verdict, History
-   │  ├─ components/
-   │  │  ├─ evidence/           # Chat, Document, Statement, CCTV, Forensic, Log, Image
-   │  │  ├─ suspects/           # SuspectCard, SuspectList
-   │  │  ├─ board/              # EvidenceBoard
-   │  │  ├─ notebook/           # Auto-saving Notebook
-   │  │  └─ ui/                 # AccusationModal
-   │  └─ store/                 # Zustand store
-   └─ index.html
+AI_MYSTERY_ROOM/
+├── package.json                   # Monorepo workspace configuration
+├── .gitignore                     # Strict security & environment exclusions
+├── README.md                      # Project documentation
+├── client/                        # React Frontend (Vite)
+│   ├── src/
+│   │   ├── api/                   # API client fetch wrapper
+│   │   ├── components/
+│   │   │   ├── evidence/          # CCTV, Chat, Document, Forensic, Log viewers
+│   │   │   ├── notebook/          # Auto-saving Detective Scratchpad
+│   │   │   ├── suspects/          # Suspect cards and roster
+│   │   │   ├── board/             # Clue linking pinboard
+│   │   │   └── ui/                # Accusation modal & UI widgets
+│   │   ├── pages/                 # Landing, Briefing, Investigation, Verdict
+│   │   └── store/                 # Zustand UI state
+│   └── vite.config.js
+└── server/                        # Node.js + Express API
+    ├── src/
+    │   ├── config/env.js          # Zod-validated environment config
+    │   ├── db/connect.js          # MongoDB + in-memory auto-fallback
+    │   ├── models/                # Case, Player, Investigation, Asset
+    │   ├── routes/                # cases, investigations, assets, health
+    │   ├── services/
+    │   │   ├── groq/client.js     # Groq structured generation engine
+    │   │   ├── caseGenerator.js   # Multi-stage mystery orchestrator
+    │   │   ├── caseSanitizer.js   # Anti-spoiler data filtering
+    │   │   ├── scoring.service.js # Accusation & ranking calculator
+    │   │   └── moderation.service.js # Input safety guardrails
+    │   └── app.js                 # Express middleware setup
+    └── tests/                     # Vitest test suites & fixtures
 ```
 
 ---
 
-## License
+## 🔒 Security & Privacy
 
-MIT. Created for AI Mystery Room. All case content generated is fictional.
+- **Safe Secret Handling:** API keys and environment files are strictly ignored via `.gitignore` and never committed.
+- **Input Sanitization:** User premises are scanned for prohibited real-world harm before processing.
+- **Rate Limiting:** Prevents concurrent API abuse and limits active case generation requests per investigator.
+- **Anonymous Session Isolation:** Player identities are maintained via cryptographic httpOnly cookies without requiring intrusive logins.
 
+---
+
+## 📜 License
+
+Distributed under the **MIT License**. See `LICENSE` for more information. All cases, suspects, and clues generated by AI Mystery Room are fictional.
