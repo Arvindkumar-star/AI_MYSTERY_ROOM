@@ -25,28 +25,94 @@ const SCHEMA_MAP = {
 export async function generateSingleEvidence({ blueprint, cluePlanItem }) {
   const schema = SCHEMA_MAP[cluePlanItem.type] || DocumentPayloadSchema;
 
-  const prompt = `Case Blueprint:
+  const targetSuspect = blueprint.suspects?.find((s) => s.suspectId === cluePlanItem.pointsTo) || blueprint.suspects?.[0];
+  const suspectName = targetSuspect?.name || 'Key Suspect';
+  const victimName = blueprint.incident?.victimName || 'Victim';
+  const crimeTime = blueprint.incident?.occurredAt || '23:00';
+  const crimeDate = blueprint.incident?.occurredAt?.slice(0, 10) || '2024-10-15';
+  const location = blueprint.incident?.location || 'Crime Scene';
+
+  const typeInstructions = {
+    cctv: `Return valid JSON with this exact structure:
+{
+  "cameraId": "CAM-${cluePlanItem.evidenceId.toUpperCase()}",
+  "location": "${location}",
+  "date": "${crimeDate}",
+  "events": [
+    {
+      "time": "${crimeTime}",
+      "description": "${cluePlanItem.purpose.replace(/"/g, "'")}",
+      "suspectId": "${cluePlanItem.pointsTo}"
+    }
+  ],
+  "gaps": []
+}`,
+    chat: `Return valid JSON with this exact structure:
+{
+  "app": "Private Chat",
+  "isGroup": false,
+  "participants": [
+    { "name": "${suspectName}", "suspectId": "${cluePlanItem.pointsTo}" },
+    { "name": "${victimName}" }
+  ],
+  "messages": [
+    {
+      "sender": "${suspectName}",
+      "text": "Message embedding the clue: ${cluePlanItem.purpose.replace(/"/g, "'")}",
+      "timestamp": "${crimeTime}",
+      "status": "read",
+      "deleted": false
+    }
+  ]
+}`,
+    document: `Return valid JSON with this exact structure:
+{
+  "docType": "report",
+  "header": { "Title": "${cluePlanItem.purpose.slice(0, 40)}", "Date": "${crimeDate}" },
+  "bodyMarkdown": "${cluePlanItem.purpose.replace(/"/g, "'")}",
+  "footer": "Authenticated Record"
+}`,
+    forensic: `Return valid JSON with this exact structure:
+{
+  "reportType": "autopsy",
+  "findings": [
+    { "label": "Key Finding", "value": "${cluePlanItem.purpose.replace(/"/g, "'")}" }
+  ],
+  "conclusion": "Forensic examination consistent with scene findings."
+}`,
+    statement: `Return valid JSON with this exact structure:
+{
+  "speakerName": "${suspectName}",
+  "speakerRole": "suspect",
+  "takenAt": "${crimeTime}",
+  "transcript": "${cluePlanItem.purpose.replace(/"/g, "'")}",
+  "reliabilityNote": "Official statement on record."
+}`,
+    log: `Return valid JSON with this exact structure:
+{
+  "logType": "access_log",
+  "entries": [
+    { "time": "${crimeTime}", "source": "Security Terminal", "entry": "${cluePlanItem.purpose.replace(/"/g, "'")}" }
+  ]
+}`,
+  };
+
+  const specificFormat = typeInstructions[cluePlanItem.type] || typeInstructions.document;
+
+  const prompt = `Case File:
 Title: ${blueprint.title}
 Incident: ${JSON.stringify(blueprint.incident)}
 Setting: ${JSON.stringify(blueprint.setting)}
-Suspects: ${JSON.stringify(blueprint.suspects.map((s) => ({ id: s.suspectId, name: s.name, statement: s.statement })))}
-True Solution Timeline: ${JSON.stringify(blueprint.solution.timeline)}
-
-Your Assignment:
-Generate the payload for a single evidence item:
+Assigned Clue:
 - Evidence ID: ${cluePlanItem.evidenceId}
 - Type: ${cluePlanItem.type}
-- Intended Purpose/Clue: ${cluePlanItem.purpose}
-- Points To: ${cluePlanItem.pointsTo}
+- Purpose: ${cluePlanItem.purpose}
+- Associated Suspect: ${suspectName} (${cluePlanItem.pointsTo})
 - Is Red Herring: ${cluePlanItem.isRedHerring}
 
-RULES:
-1. Embed the clue naturally and subtly. Never state explicitly that anyone is guilty.
-2. For chats: write authentic, realistic dialogue with timestamps, typos, and natural phrasing.
-3. For CCTV: provide a surveillance timeline with times and concise observation descriptions.
-4. For documents: provide realistic headers and markdown body text.
-5. All times must strictly adhere to the case timeline.
-6. Return ONLY the payload JSON matching the schema for type "${cluePlanItem.type}".`;
+${specificFormat}
+
+Embed the clue naturally. Output strictly JSON matching the required schema.`;
 
   const result = await callGeminiStructured({
     model: env.GROQ_API_KEY ? env.GROQ_TEXT_MODEL : env.GEMINI_TEXT_MODEL,
@@ -54,17 +120,29 @@ RULES:
     schema,
   });
 
-  if (result) return result;
+  // Verify result has actual contents, otherwise build dynamic fallback from case data
+  if (result) {
+    if (cluePlanItem.type === 'cctv' && (!result.events || result.events.length === 0)) {
+      result.events = [
+        {
+          time: crimeTime,
+          description: cluePlanItem.purpose,
+          suspectId: cluePlanItem.pointsTo || null,
+        },
+      ];
+    }
+    return result;
+  }
 
-  // Fallback payload if offline / fallback
+  // Dynamic case-specific fallback (NEVER static 1934 or Pendelton)
   if (cluePlanItem.type === 'cctv') {
     return {
-      cameraId: 'CAM-01',
-      location: blueprint?.incident?.location || 'Alley Security Feed',
-      date: blueprint?.incident?.occurredAt?.slice(0, 10) || '1934-11-12',
+      cameraId: `CAM-${cluePlanItem.evidenceId.toUpperCase()}`,
+      location,
+      date: crimeDate,
       events: [
         {
-          time: '23:35:00',
+          time: crimeTime,
           description: cluePlanItem.purpose,
           suspectId: cluePlanItem.pointsTo || null,
         },
@@ -75,13 +153,19 @@ RULES:
 
   if (cluePlanItem.type === 'chat') {
     return {
-      platform: 'Private Telegram',
-      participants: [cluePlanItem.pointsTo || 'Suspect', 'Victim'],
+      app: 'Private Chat',
+      isGroup: false,
+      participants: [
+        { name: suspectName, suspectId: cluePlanItem.pointsTo },
+        { name: victimName },
+      ],
       messages: [
         {
-          sender: cluePlanItem.pointsTo || 'Suspect',
-          timestamp: '22:15',
+          sender: suspectName,
+          timestamp: crimeTime,
           text: cluePlanItem.purpose,
+          status: 'read',
+          deleted: false,
         },
       ],
     };
@@ -89,24 +173,32 @@ RULES:
 
   if (cluePlanItem.type === 'forensic') {
     return {
-      labNumber: 'LAB-204',
-      examiner: 'Chief Medical Examiner',
-      dateConducted: blueprint?.incident?.occurredAt?.slice(0, 10) || '1934-11-13',
-      itemExamined: cluePlanItem.purpose,
-      findings: [cluePlanItem.purpose],
-      conclusiveMatch: !cluePlanItem.isRedHerring,
-      matchedSuspectId: cluePlanItem.pointsTo || null,
+      reportType: 'autopsy',
+      findings: [{ label: 'Forensic Finding', value: cluePlanItem.purpose }],
+      conclusion: 'Conclusive analysis on file.',
+    };
+  }
+
+  if (cluePlanItem.type === 'statement') {
+    return {
+      speakerName: suspectName,
+      speakerRole: 'suspect',
+      takenAt: crimeTime,
+      transcript: cluePlanItem.purpose,
+      reliabilityNote: 'Interrogation transcript on file.',
     };
   }
 
   return {
+    docType: 'report',
+    header: { Title: `Case Exhibit ${cluePlanItem.evidenceId}`, Date: crimeDate },
     bodyMarkdown: cluePlanItem.purpose,
-    docType: 'note',
+    footer: 'Official Case Record',
   };
 }
 
 /**
- * Generates all evidence items in parallel batches (Section 8.1 batch size: 4)
+ * Generates all evidence items in parallel batches
  */
 export async function generateAllEvidence({ blueprint }) {
   const cluePlan = blueprint.cluePlan || [];
@@ -124,23 +216,26 @@ export async function generateAllEvidence({ blueprint }) {
           return {
             evidenceId: item.evidenceId,
             type: item.type,
-            title: `${item.type.toUpperCase()}: ${item.purpose.slice(0, 40)}...`,
+            title: `${item.type.toUpperCase()}: ${item.purpose.slice(0, 45)}...`,
             description: item.purpose,
-            discoveredAt: `Found during initial search at ${blueprint.incident?.location || 'crime scene'}`,
+            discoveredAt: `Found during investigation at ${blueprint.incident?.location || 'crime scene'}`,
             isRedHerring: item.isRedHerring,
             payload,
             assetStatus: item.type === 'image' ? 'pending' : 'none',
           };
         } catch (err) {
-          logger.warn(`Evidence item ${item.evidenceId} failed generation: ${err.message}`);
+          logger.warn(`Evidence item ${item.evidenceId} generation failed: ${err.message}`);
           return {
             evidenceId: item.evidenceId,
             type: item.type,
             title: `Evidence ${item.evidenceId}`,
             description: item.purpose,
-            discoveredAt: 'Found at scene',
+            discoveredAt: 'Found at crime scene',
             isRedHerring: item.isRedHerring,
-            payload: { bodyMarkdown: item.purpose, docType: 'note' },
+            payload: {
+              docType: 'report',
+              bodyMarkdown: item.purpose,
+            },
             assetStatus: 'none',
           };
         }
@@ -152,4 +247,3 @@ export async function generateAllEvidence({ blueprint }) {
 
   return generatedEvidence;
 }
-

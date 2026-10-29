@@ -12,29 +12,79 @@ const DIFFICULTY_CONFIG = {
 export async function generateBlueprint({ title, premise, difficulty = 'medium', tone = 'noir' }) {
   const config = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.medium;
 
-  const systemInstruction = `You are a master mystery writer and puzzle designer.
-Your task is to invent an internally consistent, fair, deductive detective mystery case.
-RULES:
-1. Everything is fiction. No real living people or brands in defamatory context.
-${title ? `2. The case title is "${title}".` : '2. Provide an atmospheric, intriguing case title.'}
-3. Generate exactly ${config.suspects} suspects (with IDs 's1', 's2', ...).
-4. Designate exactly ONE culprit in solution.culpritId. The culprit MUST NOT be the most obvious suspect.
-5. Each non-culprit suspect must have a plausible motive, but also an alibi or exculpatory clue to clear them upon deduction.
-6. Plan ${config.evidenceMin} to ${config.evidenceMax} evidence items in cluePlan (IDs 'e1', 'e2', ...).
-7. Evidence types must be drawn from: 'chat', 'document', 'image', 'cctv', 'statement', 'forensic', 'log'.
-8. In cluePlan, each item's clueStrength must be exactly one of: 'decisive_link', 'supporting', 'distraction'.
-9. Plan exactly ${config.redHerrings} red herring clues that initially seem suspicious against an innocent suspect, but can be disproved.
-10. At least 3 independent clues must point conclusively to the true culprit.
-11. All names, times, places, and events must be mutually consistent across a single 24-hour timeline.
-12. Match tone '${tone}'.
-13. Return strictly JSON matching the required schema.`;
+  const systemInstruction = `You are a master mystery novelist and puzzle architect.
+Your mission is to invent a 100% UNIQUE, ORIGINAL, internally consistent detective mystery case based on the user's premise.
+
+CRITICAL VARIETY & DEDUCTIVE RULES:
+1. ORIGINAL CHARACTERS: Every name, victim, occupation, and setting must be invented uniquely for this premise. NEVER reuse static names like Arthur Pendelton or Julian Vance unless the user specifically asked for them.
+2. RANDOMIZED CULPRIT: Assign the culpritId to any one of the suspects randomly (e.g. 's1', 's2', 's3', 's4', 's5'). NEVER default to 's1'.
+3. EXACT SUSPECT COUNT: Create exactly ${config.suspects} suspects (with IDs 's1', 's2', ... 's${config.suspects}').
+4. FAIR ALIBIS: Every innocent suspect must have a verifiable alibi or clear reason they could not have committed the crime. The true culprit's alibi must contain a subtle flaw disproved by physical clues.
+5. DIVERSE CLUE PLAN: Plan ${config.evidenceMin} to ${config.evidenceMax} clues in cluePlan (IDs 'e1', 'e2', ...). Spread across: 'cctv', 'chat', 'document', 'forensic', 'statement', 'log'.
+6. RED HERRINGS: Include exactly ${config.redHerrings} red herring clues that create suspicion against innocent suspects but can be disproved.
+7. TIMELINE CONSISTENCY: Build a coherent timeline fitting the era of the premise.
+8. RETURN VALID JSON: Match the required JSON structure strictly.`;
 
   const userPrompt = `${title ? `Case Title: "${title}"\n` : ''}Mystery Premise:
 """
 ${premise.replace(/"/g, '\\"')}
 """
+Tone: ${tone}
+Difficulty: ${difficulty}
 
-Generate the complete case blueprint including setting, incident, suspects, solution, and cluePlan.`;
+You must return a valid JSON object matching this structure:
+{
+  "title": "Creative Title For This Case",
+  "setting": {
+    "place": "Specific crime location",
+    "era": "Time period",
+    "atmosphere": "Sensory mood"
+  },
+  "incident": {
+    "summary": "Detailed narrative of the crime that occurred",
+    "occurredAt": "Time of crime (e.g. 23:15 or 03:00)",
+    "location": "Specific crime scene room or venue",
+    "victimName": "Full name of the victim"
+  },
+  "suspects": [
+    {
+      "suspectId": "s1",
+      "name": "Full Name",
+      "age": 34,
+      "occupation": "Job Title",
+      "relationToVictim": "Relationship",
+      "personality": "Personality traits",
+      "claimedAlibi": "Their claimed alibi and whereabouts",
+      "statement": "What they said when questioned",
+      "portraitPrompt": "Visual description"
+    }
+  ],
+  "solution": {
+    "culpritId": "s2",
+    "motive": "Why they did it",
+    "method": "How they did it",
+    "opportunity": "How they got around their alibi",
+    "timeline": [
+      { "time": "21:00", "event": "Early relevant event" },
+      { "time": "23:15", "event": "The murder takes place" }
+    ],
+    "keyEvidenceIds": ["e1", "e3"],
+    "redHerringExplanations": [
+      { "evidenceId": "e2", "explanation": "Why this innocent suspect looked suspicious" }
+    ],
+    "fullExplanation": "Step-by-step breakdown of how the culprit committed the crime and how clues prove it"
+  },
+  "cluePlan": [
+    {
+      "evidenceId": "e1",
+      "type": "cctv",
+      "purpose": "What this clue reveals and how it proves guilt or innocence",
+      "pointsTo": "s2",
+      "isRedHerring": false,
+      "clueStrength": "decisive_link"
+    }
+  ]
+}`;
 
   const result = await callGeminiStructured({
     model: env.GROQ_API_KEY
@@ -46,7 +96,7 @@ Generate the complete case blueprint including setting, incident, suspects, solu
   });
 
   if (!result) {
-    // Development/offline fixture fallback
+    // Only in test or offline emergency
     return {
       title: fixtureCaseData.title,
       setting: fixtureCaseData.setting,
@@ -100,4 +150,3 @@ Generate the complete case blueprint including setting, incident, suspects, solu
 
   return result;
 }
-
