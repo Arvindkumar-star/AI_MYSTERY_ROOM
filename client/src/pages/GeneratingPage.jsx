@@ -60,7 +60,7 @@ export default function GeneratingPage() {
             ? 'Case Generation Halted'
             : status === 'ready'
             ? 'Case Dossier Ready!'
-            : 'Constructing Mystery Room...'}
+            : 'Crafting Case Dossier...'}
         </h2>
         <p className="text-zinc-400 text-sm max-w-md mx-auto">
           {status === 'failed'

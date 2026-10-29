@@ -17,11 +17,11 @@ export default function App() {
         <header className="border-b border-noir-800 bg-noir-900/90 backdrop-blur sticky top-0 z-50 px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
             <span className="w-8 h-8 rounded bg-amber/20 border border-amber/40 flex items-center justify-center text-amber font-serif font-bold group-hover:bg-amber/30 transition shadow">
-              M
+              C
             </span>
             <div>
               <h1 className="font-serif text-base sm:text-lg tracking-wide text-paper-50 font-bold leading-tight group-hover:text-amber transition">
-                AI MYSTERY ROOM
+                CLUECRAFT
               </h1>
               <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-mono">
                 Deductive Investigation Bureau
@@ -54,7 +54,7 @@ export default function App() {
 
         {/* Legal & Privacy Disclaimer Footer (Section 14.4) */}
         <footer className="border-t border-noir-800/80 py-3 px-6 text-center text-[11px] text-zinc-500 font-mono flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>AI Mystery Room — All crimes, characters, and evidence are AI-generated fiction.</span>
+          <span>ClueCraft — All crimes, characters, and evidence are AI-generated fiction.</span>
           <span>Solvable through pure logic & deduction.</span>
         </footer>
       </div>
