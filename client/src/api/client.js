@@ -1,11 +1,27 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
+function getStoredPlayerId() {
+  try {
+    return localStorage.getItem('ai_mystery_player_id') || '';
+  } catch {
+    return '';
+  }
+}
+
+function setStoredPlayerId(id) {
+  try {
+    if (id) localStorage.setItem('ai_mystery_player_id', id);
+  } catch {}
+}
+
 export async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
+  const playerId = getStoredPlayerId();
   const config = {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(playerId ? { 'x-player-id': playerId } : {}),
       ...options.headers,
     },
     credentials: 'include',
@@ -16,8 +32,13 @@ export async function apiRequest(endpoint, options = {}) {
     response = await fetch(url, config);
   } catch (netErr) {
     throw new Error(
-      'Cannot connect to backend server. Please verify the server is running at http://localhost:5000'
+      'Cannot connect to backend server. Please verify the server is running.'
     );
+  }
+
+  const returnedPlayerId = response.headers.get('x-player-id');
+  if (returnedPlayerId) {
+    setStoredPlayerId(returnedPlayerId);
   }
 
   const rawText = await response.text();

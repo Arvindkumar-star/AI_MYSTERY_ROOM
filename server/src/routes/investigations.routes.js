@@ -11,10 +11,7 @@ const router = Router();
 // POST /cases/:id/investigations - Start an investigation
 router.post('/cases/:id/investigations', async (req, res, next) => {
   try {
-    const caseDoc = await Case.findOne({
-      _id: req.params.id,
-      playerId: req.playerId,
-    });
+    const caseDoc = await Case.findById(req.params.id);
 
     if (!caseDoc) {
       throw new AppError('Case not found', 404, 'NOT_FOUND');
@@ -52,10 +49,7 @@ router.post('/cases/:id/investigations', async (req, res, next) => {
 // GET /investigations/:id - Get investigation state
 router.get('/investigations/:id', async (req, res, next) => {
   try {
-    const investigation = await Investigation.findOne({
-      _id: req.params.id,
-      playerId: req.playerId,
-    });
+    const investigation = await Investigation.findById(req.params.id);
 
     if (!investigation) {
       throw new AppError('Investigation not found', 404, 'NOT_FOUND');
@@ -94,10 +88,7 @@ router.patch('/investigations/:id', async (req, res, next) => {
     }
 
     const updates = parseResult.data;
-    const investigation = await Investigation.findOne({
-      _id: req.params.id,
-      playerId: req.playerId,
-    });
+    const investigation = await Investigation.findById(req.params.id);
 
     if (!investigation) {
       throw new AppError('Investigation not found', 404, 'NOT_FOUND');
@@ -131,10 +122,7 @@ router.patch('/investigations/:id', async (req, res, next) => {
 // POST /investigations/:id/hint - Request a hint (P1)
 router.post('/investigations/:id/hint', async (req, res, next) => {
   try {
-    const investigation = await Investigation.findOne({
-      _id: req.params.id,
-      playerId: req.playerId,
-    });
+    const investigation = await Investigation.findById(req.params.id);
 
     if (!investigation) {
       throw new AppError('Investigation not found', 404, 'NOT_FOUND');

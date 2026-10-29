@@ -29,6 +29,7 @@ export function createApp() {
     cors({
       origin: env.CLIENT_ORIGIN || true,
       credentials: true,
+      exposedHeaders: ['x-player-id'],
     })
   );
 

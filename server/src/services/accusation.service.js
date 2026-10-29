@@ -10,10 +10,7 @@ const ATTEMPTS_BY_DIFFICULTY = {
 };
 
 export async function processAccusation({ investigationId, playerId, suspectId, theory = '' }) {
-  const investigation = await Investigation.findOne({
-    _id: investigationId,
-    playerId,
-  });
+  const investigation = await Investigation.findById(investigationId);
 
   if (!investigation) {
     throw new AppError('Investigation not found', 404, 'NOT_FOUND');

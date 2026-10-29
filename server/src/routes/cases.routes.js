@@ -73,10 +73,7 @@ router.post('/cases', async (req, res, next) => {
 // GET /cases/:id/status - poll generation progress
 router.get('/cases/:id/status', async (req, res, next) => {
   try {
-    const caseDoc = await Case.findOne({
-      _id: req.params.id,
-      playerId: req.playerId,
-    });
+    const caseDoc = await Case.findById(req.params.id);
 
     if (!caseDoc) {
       throw new AppError('Case not found', 404, 'NOT_FOUND');
@@ -109,10 +106,7 @@ router.get('/cases/:id/status', async (req, res, next) => {
 // GET /cases/:id - sanitized case payload
 router.get('/cases/:id', async (req, res, next) => {
   try {
-    const caseDoc = await Case.findOne({
-      _id: req.params.id,
-      playerId: req.playerId,
-    });
+    const caseDoc = await Case.findById(req.params.id);
 
     if (!caseDoc) {
       throw new AppError('Case not found', 404, 'NOT_FOUND');
