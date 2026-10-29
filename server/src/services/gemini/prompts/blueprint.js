@@ -22,11 +22,12 @@ ${title ? `2. The case title is "${title}".` : '2. Provide an atmospheric, intri
 5. Each non-culprit suspect must have a plausible motive, but also an alibi or exculpatory clue to clear them upon deduction.
 6. Plan ${config.evidenceMin} to ${config.evidenceMax} evidence items in cluePlan (IDs 'e1', 'e2', ...).
 7. Evidence types must be drawn from: 'chat', 'document', 'image', 'cctv', 'statement', 'forensic', 'log'.
-8. Plan exactly ${config.redHerrings} red herring clues that initially seem suspicious against an innocent suspect, but can be disproved.
-9. At least 3 independent clues must point conclusively to the true culprit.
-10. All names, times, places, and events must be mutually consistent across a single 24-hour timeline.
-11. Match tone '${tone}'.
-12. Return strictly JSON matching the required schema.`;
+8. In cluePlan, each item's clueStrength must be exactly one of: 'decisive_link', 'supporting', 'distraction'.
+9. Plan exactly ${config.redHerrings} red herring clues that initially seem suspicious against an innocent suspect, but can be disproved.
+10. At least 3 independent clues must point conclusively to the true culprit.
+11. All names, times, places, and events must be mutually consistent across a single 24-hour timeline.
+12. Match tone '${tone}'.
+13. Return strictly JSON matching the required schema.`;
 
   const userPrompt = `${title ? `Case Title: "${title}"\n` : ''}Mystery Premise:
 """

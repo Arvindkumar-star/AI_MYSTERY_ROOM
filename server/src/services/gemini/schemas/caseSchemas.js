@@ -7,24 +7,40 @@ export const ToneEnum = z.enum(['classic', 'noir', 'cozy', 'thriller', 'scifi'])
 // Clue Plan Item Schema (Part of Blueprint)
 export const CluePlanItemSchema = z.object({
   evidenceId: z.string(),
-  type: z.enum(['chat', 'document', 'image', 'cctv', 'statement', 'forensic', 'audio_transcript', 'log']),
+  type: z
+    .string()
+    .transform((v) => {
+      const allowed = ['chat', 'document', 'image', 'cctv', 'statement', 'forensic', 'audio_transcript', 'log'];
+      const lv = v.toLowerCase();
+      return allowed.includes(lv) ? lv : 'document';
+    })
+    .pipe(z.enum(['chat', 'document', 'image', 'cctv', 'statement', 'forensic', 'audio_transcript', 'log'])),
   purpose: z.string(),
-  pointsTo: z.string(), // suspectId or 'none' / 'red_herring'
-  isRedHerring: z.boolean(),
-  clueStrength: z.enum(['decisive_link', 'supporting', 'distraction']),
+  pointsTo: z.string().default('s1'), // suspectId or 'none' / 'red_herring'
+  isRedHerring: z.boolean().default(false),
+  clueStrength: z
+    .string()
+    .transform((v) => {
+      const lv = v.toLowerCase();
+      if (lv.includes('high') || lv.includes('decisive') || lv.includes('key') || lv.includes('primary')) return 'decisive_link';
+      if (lv.includes('distract') || lv.includes('red') || lv.includes('herring') || lv.includes('low') || lv.includes('misleading')) return 'distraction';
+      return 'supporting';
+    })
+    .pipe(z.enum(['decisive_link', 'supporting', 'distraction']))
+    .default('supporting'),
 });
 
 // Suspect Blueprint Schema
 export const SuspectSchema = z.object({
   suspectId: z.string(),
   name: z.string(),
-  age: z.number().int().positive(),
-  occupation: z.string(),
-  relationToVictim: z.string(),
-  personality: z.string(),
-  claimedAlibi: z.string(),
-  statement: z.string(),
-  portraitPrompt: z.string(),
+  age: z.coerce.number().int().positive().default(35),
+  occupation: z.string().default('Unknown'),
+  relationToVictim: z.string().default('Acquaintance'),
+  personality: z.string().default(''),
+  claimedAlibi: z.string().default(''),
+  statement: z.string().default(''),
+  portraitPrompt: z.string().optional().default(''),
 });
 
 // Blueprint Schema
