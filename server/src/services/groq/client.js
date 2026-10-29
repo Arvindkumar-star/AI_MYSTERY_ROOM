@@ -11,6 +11,12 @@ export function getGroqClient() {
   return groqClient;
 }
 
+const KNOWN_FALLBACK_MODELS = [
+  'qwen/qwen3.8-27b',
+  'openai/gpt-oss-20b',
+  'openai/gpt-oss-120b',
+];
+
 /**
  * Strips markdown code blocks and trims content to extract pure JSON.
  */
@@ -24,10 +30,10 @@ function cleanJsonResponse(rawText) {
 }
 
 /**
- * Executes a Groq request with JSON mode, schema validation, retries, and timeout.
+ * Executes a Groq request with JSON mode, schema validation, retries, model failover, and timeout.
  */
 export async function callGroqStructured({
-  model = env.GROQ_TEXT_MODEL || 'llama-3.3-70b-versatile',
+  model = env.GROQ_TEXT_MODEL || 'openai/gpt-oss-20b',
   systemInstruction,
   prompt,
   schema,
@@ -46,87 +52,108 @@ export async function callGroqStructured({
     return null;
   }
 
+  // Build model try list starting with requested model, followed by alternatives
+  const modelsToTry = [
+    model,
+    ...KNOWN_FALLBACK_MODELS.filter((m) => m !== model),
+  ];
+
   let lastError = null;
-  let currentPrompt = prompt;
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const messages = [];
+  for (const currentModel of modelsToTry) {
+    let currentPrompt = prompt;
 
-      const systemPrompt = systemInstruction
-        ? `${systemInstruction}\n\nIMPORTANT: You must output ONLY valid, parsable JSON matching the requested schema.`
-        : 'You are an AI assistant. You must output ONLY valid, parsable JSON matching the requested schema.';
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const messages = [];
 
-      messages.push({ role: 'system', content: systemPrompt });
-      messages.push({ role: 'user', content: currentPrompt });
+        const systemPrompt = systemInstruction
+          ? `${systemInstruction}\n\nIMPORTANT: You must output ONLY valid, parsable JSON matching the requested schema.`
+          : 'You are an AI assistant. You must output ONLY valid, parsable JSON matching the requested schema.';
 
-      const completion = await client.chat.completions.create(
-        {
-          model: model || 'llama-3.3-70b-versatile',
-          messages,
-          response_format: { type: 'json_object' },
-          temperature: 0.7,
-        },
-        { timeout: timeoutMs }
-      );
+        messages.push({ role: 'system', content: systemPrompt });
+        messages.push({ role: 'user', content: currentPrompt });
 
-      const rawContent = completion.choices?.[0]?.message?.content;
-      if (!rawContent) {
-        throw new Error('Empty response received from Groq');
-      }
+        const maxOutputTokens = currentModel.includes('qwen') ? 900 : 2048;
 
-      const cleanedJson = cleanJsonResponse(rawContent);
-      const parsedJson = JSON.parse(cleanedJson);
+        const completion = await client.chat.completions.create(
+          {
+            model: currentModel,
+            messages,
+            response_format: { type: 'json_object' },
+            temperature: 0.7,
+            max_tokens: maxOutputTokens,
+          },
+          { timeout: timeoutMs }
+        );
 
-      if (schema) {
-        const validation = schema.safeParse(parsedJson);
-        if (!validation.success) {
-          logger.warn(
-            { attempt, errors: validation.error.format() },
-            'Groq output validation failed'
-          );
-
-          if (attempt < maxRetries) {
-            currentPrompt += `\n\nCRITICAL FIX: Your previous JSON output failed validation with error: ${JSON.stringify(
-              validation.error.format()
-            )}. Ensure the JSON strictly matches the expected schema.`;
-            continue;
-          }
-          throw new Error(`Schema validation failed after ${maxRetries} attempts`);
+        const rawContent = completion.choices?.[0]?.message?.content;
+        if (!rawContent) {
+          throw new Error('Empty response received from Groq');
         }
-        return validation.data;
-      }
 
-      return parsedJson;
-    } catch (err) {
-      lastError = err;
-      logger.warn(
-        { attempt, err: err.message },
-        `Groq call failed (attempt ${attempt}/${maxRetries})`
-      );
+        const cleanedJson = cleanJsonResponse(rawContent);
+        const parsedJson = JSON.parse(cleanedJson);
 
-      // Handle unrecoverable errors gracefully (invalid key, rate limits, model errors)
-      if (
-        err.status === 401 ||
-        err.message?.includes('401') ||
-        err.message?.includes('Invalid API Key') ||
-        err.message?.includes('invalid_api_key') ||
-        err.status === 429 ||
-        err.message?.includes('429') ||
-        err.message?.includes('rate_limit_exceeded') ||
-        err.status === 404 ||
-        err.status === 503
-      ) {
-        logger.warn(`Groq API error (${err.message}). Falling back to offline generation fixtures.`);
-        return null;
-      }
+        if (schema) {
+          const validation = schema.safeParse(parsedJson);
+          if (!validation.success) {
+            logger.warn(
+              { attempt, model: currentModel, errors: validation.error.format() },
+              'Groq output validation failed'
+            );
 
-      if (attempt < maxRetries) {
-        await new Promise((resolve) => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+            if (attempt < maxRetries) {
+              currentPrompt += `\n\nCRITICAL FIX: Your previous JSON output failed validation with error: ${JSON.stringify(
+                validation.error.format()
+              )}. Ensure the JSON strictly matches the expected schema.`;
+              continue;
+            }
+            throw new Error(`Schema validation failed after ${maxRetries} attempts on ${currentModel}`);
+          }
+          return validation.data;
+        }
+
+        return parsedJson;
+      } catch (err) {
+        lastError = err;
+        const isRateLimit =
+          err.status === 429 ||
+          err.message?.includes('429') ||
+          err.message?.includes('rate_limit_exceeded') ||
+          err.message?.includes('Rate limit reached');
+        const isModelMissing =
+          err.status === 404 ||
+          err.message?.includes('model_not_found') ||
+          err.message?.includes('does not exist');
+
+        logger.warn(
+          { attempt, model: currentModel, err: err.message },
+          `Groq call failed on model ${currentModel}`
+        );
+
+        // If rate limit or missing model, immediately switch to next model in cascade
+        if (isRateLimit || isModelMissing) {
+          logger.warn(`Model ${currentModel} unavailable (${err.message}). Trying next fallback model.`);
+          break; // Break inner loop to try next model in modelsToTry
+        }
+
+        if (
+          err.status === 401 ||
+          err.message?.includes('401') ||
+          err.message?.includes('Invalid API Key')
+        ) {
+          logger.warn('Groq API key invalid. Aborting Groq calls.');
+          return null;
+        }
+
+        if (attempt < maxRetries) {
+          await new Promise((resolve) => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
       }
     }
   }
 
-  logger.warn(`All ${maxRetries} Groq attempts failed (${lastError?.message}). Using fallback fixtures.`);
+  logger.warn(`All Groq candidate models failed (${lastError?.message}). Using fallback.`);
   return null;
 }

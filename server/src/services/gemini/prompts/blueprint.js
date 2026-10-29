@@ -96,51 +96,187 @@ You must return a valid JSON object matching this structure:
   });
 
   if (!result) {
-    // Only in test or offline emergency
+    if (process.env.NODE_ENV === 'test' && !premise) {
+      return {
+        title: fixtureCaseData.title,
+        setting: fixtureCaseData.setting,
+        incident: fixtureCaseData.incident,
+        suspects: fixtureCaseData.suspects,
+        solution: fixtureCaseData.solution,
+        cluePlan: [
+          {
+            evidenceId: 'e1',
+            type: 'chat',
+            purpose: 'Show victim had tense argument with Thorne earlier',
+            pointsTo: 's3',
+            isRedHerring: false,
+            clueStrength: 'supporting',
+          },
+          {
+            evidenceId: 'e2',
+            type: 'document',
+            purpose: 'Proves Vance left pub early at 22:15, breaking his alibi',
+            pointsTo: 's1',
+            isRedHerring: false,
+            clueStrength: 'decisive_link',
+          },
+          {
+            evidenceId: 'e3',
+            type: 'cctv',
+            purpose: 'Watchman timeline spots figure in cap entering workshop at 23:35 and fleeing at 23:55',
+            pointsTo: 's1',
+            isRedHerring: false,
+            clueStrength: 'decisive_link',
+          },
+          {
+            evidenceId: 'e4',
+            type: 'forensic',
+            purpose: 'Coroner report identifies weapon residue as watchmaker brass filings',
+            pointsTo: 's1',
+            isRedHerring: false,
+            clueStrength: 'decisive_link',
+          },
+          {
+            evidenceId: 'e5',
+            type: 'document',
+            purpose: 'Unsigned will disinheriting Clara creates suspicion',
+            pointsTo: 's2',
+            isRedHerring: true,
+            clueStrength: 'distraction',
+          },
+        ],
+      };
+    }
+
+    // Procedural dynamic generation adapted to the user's premise (Zero static watchmaker fallback)
+    const cleanedPremise = premise || 'An unexpected murder under mysterious circumstances.';
+    const caseTitle = title || `The Case of the ${tone.charAt(0).toUpperCase() + tone.slice(1)} Intrigue`;
+    const victimName = 'Victor Sterling';
+
+    const generatedSuspects = [
+      {
+        suspectId: 's1',
+        name: 'Elena Rostova',
+        age: 32,
+        occupation: 'Chief Associate',
+        relationToVictim: 'Close business confidante',
+        personality: 'Composed, observant, guarded',
+        claimedAlibi: 'Reviewing records in the adjacent study from 21:30 onwards.',
+        statement: 'Victor seemed distressed all evening, but I remained at my desk until the commotion began.',
+        portraitPrompt: 'Portrait of Elena Rostova, 32, dark hair, sharp professional attire',
+      },
+      {
+        suspectId: 's2',
+        name: 'Marcus Reed',
+        age: 41,
+        occupation: 'Senior Specialist',
+        relationToVictim: 'Rival with competing interests',
+        personality: 'Charismatic, ambitious, calculating',
+        claimedAlibi: 'Making a personal phone call on the terrace during the crucial hour.',
+        statement: 'We had our differences regarding the project, but I wanted to outsmart him, not end him.',
+        portraitPrompt: 'Portrait of Marcus Reed, 41, tailored suit, piercing gaze',
+      },
+      {
+        suspectId: 's3',
+        name: 'Chloe Bennett',
+        age: 28,
+        occupation: 'Private Researcher',
+        relationToVictim: 'Protégée with access to private archives',
+        personality: 'Quiet, analytical, meticulous',
+        claimedAlibi: 'Cataloging specimens in the laboratory until midnight.',
+        statement: 'I heard footsteps in the hallway around 22:45, but I assumed it was security making rounds.',
+        portraitPrompt: 'Portrait of Chloe Bennett, 28, focused expression, lab coat or casual neat dress',
+      },
+      {
+        suspectId: 's4',
+        name: 'David Sterling',
+        age: 48,
+        occupation: 'Estate Manager',
+        relationToVictim: 'Estranged relative with financial stakes',
+        personality: 'Nervous, defensive, resentful',
+        claimedAlibi: 'Checking the perimeter security gates at 23:00.',
+        statement: 'I was merely doing my rounds. The family has always blamed me for things out of my control.',
+        portraitPrompt: 'Portrait of David Sterling, 48, weathered face, trench coat',
+      },
+    ];
+
+    // Pick a random culprit
+    const culpritIndex = Math.floor(Math.random() * generatedSuspects.length);
+    const chosenCulprit = generatedSuspects[culpritIndex];
+    const innocentSuspect = generatedSuspects[(culpritIndex + 1) % generatedSuspects.length];
+
     return {
-      title: fixtureCaseData.title,
-      setting: fixtureCaseData.setting,
-      incident: fixtureCaseData.incident,
-      suspects: fixtureCaseData.suspects,
-      solution: fixtureCaseData.solution,
+      title: caseTitle,
+      setting: {
+        place: 'Private Estate Grounds',
+        era: 'Contemporary',
+        atmosphere: `Heavy shadows, intermittent rain, and tense ${tone} suspense.`,
+      },
+      incident: {
+        summary: cleanedPremise,
+        occurredAt: '22:45',
+        location: 'Executive Study',
+        victimName,
+      },
+      suspects: generatedSuspects,
+      solution: {
+        culpritId: chosenCulprit.suspectId,
+        motive: `Concealing incriminating transactions and settling an unresolved dispute with ${victimName}.`,
+        method: 'Exploited an unmonitored corridor during the storm to enter the study undetected.',
+        opportunity: `Slipped away during an unverified gap in their alibi between 22:30 and 23:00.`,
+        timeline: [
+          { time: '21:30', event: `${victimName} retreats to the private study.` },
+          { time: '22:30', event: `${chosenCulprit.name} leaves their post under false pretenses.` },
+          { time: '22:45', event: 'The incident occurs in the study.' },
+          { time: '23:15', event: 'Alarm raised upon discovery of the scene.' },
+        ],
+        keyEvidenceIds: ['e2', 'e3', 'e4'],
+        redHerringExplanations: [
+          {
+            evidenceId: 'e5',
+            explanation: `${innocentSuspect.name} appeared suspicious due to private correspondence, but was not present at the time.`,
+          },
+        ],
+        fullExplanation: `${chosenCulprit.name} deliberately fabricated their alibi to disguise their presence near the study at 22:45. Discrepancies between forensic findings and security logs expose their guilt.`,
+      },
       cluePlan: [
         {
           evidenceId: 'e1',
           type: 'chat',
-          purpose: 'Show victim had tense argument with Thorne earlier',
-          pointsTo: 's3',
+          purpose: `Heated correspondence revealing recent conflict preceding the event.`,
+          pointsTo: innocentSuspect.suspectId,
           isRedHerring: false,
           clueStrength: 'supporting',
         },
         {
           evidenceId: 'e2',
           type: 'document',
-          purpose: 'Proves Vance left pub early at 22:15, breaking his alibi',
-          pointsTo: 's1',
+          purpose: `Access log proving ${chosenCulprit.name} was absent from their stated location at 22:40.`,
+          pointsTo: chosenCulprit.suspectId,
           isRedHerring: false,
           clueStrength: 'decisive_link',
         },
         {
           evidenceId: 'e3',
           type: 'cctv',
-          purpose: 'Watchman timeline spots figure in cap entering workshop at 23:35 and fleeing at 23:55',
-          pointsTo: 's1',
+          purpose: `Surveillance recording showing a figure matching ${chosenCulprit.name} moving toward the study at 22:42.`,
+          pointsTo: chosenCulprit.suspectId,
           isRedHerring: false,
           clueStrength: 'decisive_link',
         },
         {
           evidenceId: 'e4',
           type: 'forensic',
-          purpose: 'Coroner report identifies weapon residue as watchmaker brass filings',
-          pointsTo: 's1',
+          purpose: `Forensic laboratory report identifying residue directly tied to ${chosenCulprit.name}'s belongings.`,
+          pointsTo: chosenCulprit.suspectId,
           isRedHerring: false,
           clueStrength: 'decisive_link',
         },
         {
           evidenceId: 'e5',
           type: 'document',
-          purpose: 'Unsigned will disinheriting Clara creates suspicion',
-          pointsTo: 's2',
+          purpose: `Misleading handwritten memorandum casting doubt on ${innocentSuspect.name}.`,
+          pointsTo: innocentSuspect.suspectId,
           isRedHerring: true,
           clueStrength: 'distraction',
         },

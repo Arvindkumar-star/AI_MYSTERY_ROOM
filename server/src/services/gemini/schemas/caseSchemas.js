@@ -11,6 +11,7 @@ export const CluePlanItemSchema = z.preprocess(
       const obj = { ...val };
       if (!obj.evidenceId && obj.id) obj.evidenceId = String(obj.id);
       if (!obj.evidenceId) obj.evidenceId = 'e1';
+      if (!obj.purpose && obj.significance) obj.purpose = String(obj.significance);
       if (!obj.purpose && obj.description) obj.purpose = String(obj.description);
       if (!obj.purpose && obj.clue) obj.purpose = String(obj.clue);
       if (!obj.purpose && obj.details) obj.purpose = String(obj.details);
@@ -185,6 +186,10 @@ const rawBlueprintSchema = z.object({
 export const BlueprintSchema = z.preprocess((val) => {
   if (val && typeof val === 'object') {
     const obj = { ...val };
+    if (!obj.cluePlan && Array.isArray(obj.clues)) obj.cluePlan = obj.clues;
+    if (!obj.cluePlan && Array.isArray(obj.evidence)) obj.cluePlan = obj.evidence;
+    if (!obj.cluePlan && Array.isArray(obj.evidencePlan)) obj.cluePlan = obj.evidencePlan;
+
     if (Array.isArray(obj.suspects)) {
       obj.suspects = obj.suspects.map((s, idx) => {
         if (typeof s === 'object' && s) {
@@ -193,6 +198,7 @@ export const BlueprintSchema = z.preprocess((val) => {
         return { suspectId: `s${idx + 1}`, name: String(s) };
       });
     }
+
     if (Array.isArray(obj.cluePlan)) {
       obj.cluePlan = obj.cluePlan.map((c, idx) => {
         if (typeof c === 'object' && c) {
@@ -200,7 +206,58 @@ export const BlueprintSchema = z.preprocess((val) => {
         }
         return { evidenceId: `e${idx + 1}`, purpose: String(c) };
       });
+    } else {
+      obj.cluePlan = [];
     }
+
+    // If cluePlan came back empty, synthesize dynamic clues from suspects and incident
+    if (obj.cluePlan.length === 0 && Array.isArray(obj.suspects) && obj.suspects.length > 0) {
+      const culpritId = obj.solution?.culpritId || obj.suspects[0].suspectId;
+      const innocentId = obj.suspects.find(s => s.suspectId !== culpritId)?.suspectId || obj.suspects[0].suspectId;
+      obj.cluePlan = [
+        {
+          evidenceId: 'e1',
+          type: 'chat',
+          purpose: `Tense messages between victim and ${obj.suspects[0].name} preceding the incident.`,
+          pointsTo: obj.suspects[0].suspectId,
+          isRedHerring: false,
+          clueStrength: 'supporting',
+        },
+        {
+          evidenceId: 'e2',
+          type: 'document',
+          purpose: `Records contradicting alibi of the prime suspect.`,
+          pointsTo: culpritId,
+          isRedHerring: false,
+          clueStrength: 'decisive_link',
+        },
+        {
+          evidenceId: 'e3',
+          type: 'cctv',
+          purpose: `Surveillance camera footage showing suspicious movement near the crime scene.`,
+          pointsTo: culpritId,
+          isRedHerring: false,
+          clueStrength: 'decisive_link',
+        },
+        {
+          evidenceId: 'e4',
+          type: 'forensic',
+          purpose: `Forensic laboratory analysis identifying trace materials and exact cause of death.`,
+          pointsTo: culpritId,
+          isRedHerring: false,
+          clueStrength: 'decisive_link',
+        },
+        {
+          evidenceId: 'e5',
+          type: 'document',
+          purpose: `Circumstantial record creating temporary suspicion against an innocent party.`,
+          pointsTo: innocentId,
+          isRedHerring: true,
+          clueStrength: 'distraction',
+        },
+      ];
+    }
+
     if (obj.solution && typeof obj.solution === 'object') {
       const sol = { ...obj.solution };
       if (!sol.culpritId && sol.culprit) sol.culpritId = String(sol.culprit);

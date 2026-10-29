@@ -15,8 +15,8 @@ const envSchema = z.object({
   COOKIE_SECRET: z.string().min(8).default('detective-mystery-secret-32-chars-key'),
   // Groq AI Configuration
   GROQ_API_KEY: z.string().optional().default(''),
-  GROQ_TEXT_MODEL: z.string().default('openai/gpt-oss-120b'),
-  GROQ_REASONING_MODEL: z.string().default('openai/gpt-oss-120b'),
+  GROQ_TEXT_MODEL: z.string().default('qwen/qwen3.8-27b'),
+  GROQ_REASONING_MODEL: z.string().default('qwen/qwen3.8-27b'),
   GROQ_TIMEOUT_MS: z.coerce.number().default(60000),
   // Gemini AI Configuration (fallback/optional)
   GEMINI_API_KEY: z.string().optional().default(''),
