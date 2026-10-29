@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
+import { env } from '../config/env.js';
 
 const router = Router();
 
@@ -12,6 +13,9 @@ router.get('/health', async (req, res) => {
     data: {
       status: isDbConnected ? 'healthy' : 'degraded',
       database: isDbConnected ? 'connected' : 'disconnected',
+      hasGroqKey: Boolean(env.GROQ_API_KEY && env.GROQ_API_KEY.trim()),
+      groqModel: env.GROQ_TEXT_MODEL,
+      hasGeminiKey: Boolean(env.GEMINI_API_KEY && env.GEMINI_API_KEY.trim()),
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
     },
